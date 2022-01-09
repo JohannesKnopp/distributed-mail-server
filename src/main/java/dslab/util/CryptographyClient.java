@@ -25,6 +25,7 @@ public class CryptographyClient {
     private String encodedEncryptedChallenge;
 
     private SecretKey secretKey;
+    private byte[] byteIv;
     private IvParameterSpec iv;
 
     private Cipher cipher;
@@ -93,10 +94,10 @@ public class CryptographyClient {
 
     //TODO AES
 
-    public SecretKey generateKey(int n){
+    public SecretKey generateKey(){
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(n);
+            keyGenerator.init(128);
             secretKey = keyGenerator.generateKey();
         }catch (NoSuchAlgorithmException e){
             e.printStackTrace();
@@ -154,6 +155,16 @@ public class CryptographyClient {
     public void generateIv() {
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
+        byteIv = iv;
+
         this.iv = new IvParameterSpec(iv);
+    }
+
+    public String encodedIv() {
+       return Base64.getEncoder().encodeToString(byteIv);
+    }
+
+    public String encodedSecretKey() {
+        return Base64.getEncoder().encodeToString(secretKey.getEncoded());
     }
 }

@@ -78,7 +78,7 @@ public class DmapServerThread extends Thread {
 
         private boolean isLoggedIn;
         private boolean startSecure;
-        private boolean useAES;
+        private boolean useAES; //TODO
         private boolean expectOk;
         private String username;
 
@@ -95,12 +95,12 @@ public class DmapServerThread extends Thread {
 
                 writer = new PrintWriter(socket.getOutputStream());
 
-                writer.println("ok DMAP");
-                writer.flush();
+                writeMessage("ok DMAP");
 
                 String request;
 
                 while ((request = reader.readLine()) != null) {
+                    request = recvMessage(request);
                     String[] parts = request.split("\\s");
 
                     if (parts.length != 0) {
@@ -157,12 +157,10 @@ public class DmapServerThread extends Thread {
         public void startsecure() {
             //TODO boolean var ?
             startSecure = true;
-            writer.println("ok " + componentId);
-            writer.flush();
+            writeMessage("ok " + componentId);
         }
 
         public void challenge(String clientChallenge, String secretKey, String iv) {
-            // TODO AES
             if (startSecure && !isLoggedIn) {
                 byte[] decodedKey = Base64.getDecoder().decode(secretKey);
                 SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
@@ -172,8 +170,7 @@ public class DmapServerThread extends Thread {
                 cryptographyServer.setIv(ivSpec);
 
                 String s = cryptographyServer.decryptRSA(clientChallenge);
-                writer.println("ok " + s);
-                writer.flush();
+                writeMessage("ok " + s);
 
                 expectOk = true;
                 useAES = true;
@@ -206,10 +203,9 @@ public class DmapServerThread extends Thread {
                     while (it.hasNext()) {
                         m = it.next();
                         if (m != null) {
-                            writer.println(m.getId() + " " + m.getFrom() + " " + m.getSubject());
+                            writeMessage(m.getId() + " " + m.getFrom() + " " + m.getSubject());
                         }
                     }
-                    writer.flush();
                 } else {
                     ok();
                 }
@@ -222,11 +218,10 @@ public class DmapServerThread extends Thread {
             if (isLoggedIn) {
                 Message m = mailboxStorage.showMessage(username, id);
                 if (m != null) {
-                    writer.println("from " + m.getFrom());
-                    writer.println("to " + String.join(",", m.getTo()));
-                    writer.println("subject " + m.getSubject());
-                    writer.println("data " + m.getData());
-                    writer.flush();
+                    writeMessage("from " + m.getFrom());
+                    writeMessage("to " + String.join(",", m.getTo()));
+                    writeMessage("subject " + m.getSubject());
+                    writeMessage("data " + m.getData());
                 } else {
                     error("unknown message id");
                 }
@@ -251,6 +246,8 @@ public class DmapServerThread extends Thread {
             if (isLoggedIn) {
                 isLoggedIn = false;
                 username = null;
+                useAES = false;
+                startSecure = false;
                 ok();
             } else {
                 error("was not logged in");
@@ -258,18 +255,15 @@ public class DmapServerThread extends Thread {
         }
 
         public void ok() {
-            writer.println("ok");
-            writer.flush();
+            writeMessage("ok");
         }
 
         public void error(String message) {
-            writer.println("error " + message);
-            writer.flush();
+            writeMessage("error " + message);
         }
 
         public void quit() {
-            writer.println("ok bye");
-            writer.flush();
+            writeMessage("ok bye");
             closeConnection();
         }
 
@@ -293,6 +287,21 @@ public class DmapServerThread extends Thread {
                     //Cannot handle
                 }
             }
+        }
+
+        private void writeMessage(String message) {
+            if (useAES) {
+                message = cryptographyServer.encryptMessage(message);
+            }
+            writer.println(message);
+            writer.flush();
+        }
+
+        private String recvMessage(String message) {
+            if (useAES) {
+                message = cryptographyServer.decryptMessage(message);
+            }
+            return message;
         }
 
     }

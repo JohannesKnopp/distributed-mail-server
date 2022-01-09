@@ -58,14 +58,16 @@ public class TestMailClient {
         String secretKey = crypto.encodedSecretKey();
         String iv = crypto.encodedIv();
         client.sendMessage("ok " + challenge + " " + secretKey + " " + iv);
-        String result = client.recvMessage().split("\\s")[1];
+        String result = client.recvMessage().substring(3);
         System.out.println(result);
         System.out.println(new String(crypto.getChallenge(), StandardCharsets.US_ASCII));
+        client.sendMessage(crypto.encryptMessage("ok"));
 
+        String message = "login trillian 12345";
+        System.out.println(crypto.encryptMessage(message));
+        client.sendMessage(crypto.encryptMessage(message));
 
-        System.out.println(client.recvMessage());
-        client.sendMessage("startsecure");
-        client.sendMessage("startsecure");
+        System.out.println(crypto.decryptMessage(client.recvMessage()));
 
     }
 }

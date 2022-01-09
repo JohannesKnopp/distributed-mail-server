@@ -83,8 +83,7 @@ public class CryptographyServer {
             Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, key, iv);
             byte[] cipherText = cipher.doFinal(input.getBytes());
-            return Base64.getEncoder()
-                    .encodeToString(cipherText);
+            return Base64.getEncoder().encodeToString(cipherText);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -92,12 +91,10 @@ public class CryptographyServer {
     }
 
     public String decrypt(String input, SecretKey key, IvParameterSpec iv) {
-
         try {
             Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, key, iv);
-            byte[] plainText = cipher.doFinal(Base64.getDecoder()
-                    .decode(input));
+            byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(input));
 
             return new String(plainText);
         }catch (Exception e){

@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -105,8 +106,8 @@ public class DmapServerThread extends Thread {
 
                     if (parts.length != 0) {
                         if (expectOk) {
-                            if ((!request.equals("ok"))) {
-                                error("protocol error");
+                            if ((!request.contains("ok"))) {
+                                error(request + " " + cryptographyServer.decryptMessage(request));
                                 break;
                             } else {
                                 expectOk = false;
@@ -166,7 +167,8 @@ public class DmapServerThread extends Thread {
                 SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
                 cryptographyServer.setSecretKey(originalKey);
 
-                IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
+                byte[] decodedIv = Base64.getDecoder().decode(iv);
+                IvParameterSpec ivSpec = new IvParameterSpec(decodedIv);
                 cryptographyServer.setIv(ivSpec);
 
                 String s = cryptographyServer.decryptRSA(clientChallenge);

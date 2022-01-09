@@ -93,10 +93,10 @@ public class TransferServer implements ITransferServer, Runnable {
     }
 
     public void domainLookup() {
-        Config domains = new Config("domains");
-        for (String s : domains.listKeys()) {
-            this.domains.put(s, domains.getString(s));
-        }
+//        Config domains = new Config("domains");
+//        for (String s : domains.listKeys()) {
+//            this.domains.put(s, domains.getString(s));
+//        }
     }
 
     public static void main(String[] args) throws Exception {

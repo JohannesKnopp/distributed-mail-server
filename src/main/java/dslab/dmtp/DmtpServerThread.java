@@ -3,6 +3,9 @@ package dslab.dmtp;
 import dslab.entity.MailboxStorage;
 import dslab.entity.Message;
 import dslab.exception.DmtpException;
+import dslab.nameserver.AlreadyRegisteredException;
+import dslab.nameserver.INameserverRemote;
+import dslab.nameserver.InvalidDomainException;
 import dslab.transfer.TransferDeliveryHandler;
 import dslab.util.Config;
 import dslab.util.Helper;
@@ -13,6 +16,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +57,7 @@ public class DmtpServerThread extends Thread {
     public void run() {
         this.clients = new ConcurrentLinkedQueue<>();
         init();
+
         executor = Executors.newCachedThreadPool();
         while (!quit) {
             try {
@@ -82,6 +90,7 @@ public class DmtpServerThread extends Thread {
     }
 
     public void init() {
+
         config = new Config(componentId);
         if (componentId.startsWith("transfer")) {
             serverType = ServerType.TRANSFER_SERVER;
@@ -89,6 +98,18 @@ public class DmtpServerThread extends Thread {
             transferDeliveryHandler.start();
         } else if (componentId.startsWith("mailbox")) {
             serverType = ServerType.MAILBOX_SERVER;
+            Registry registry = null;
+            try {
+                registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+                INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
+                registryRemote.registerMailboxServer(config.getString("domain"), "localhost:" + config.getString("dmtp.tcp.port"));
+            } catch (RemoteException | NotBoundException e) {
+                e.printStackTrace();
+            } catch (InvalidDomainException e) {
+                e.printStackTrace();
+            } catch (AlreadyRegisteredException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -191,6 +212,7 @@ public class DmtpServerThread extends Thread {
                         valid = false;
                         break;
                     } else if (serverType == ServerType.MAILBOX_SERVER) {
+
                         if (Validator.isValidDomain(s, acceptedDomains)) {
                             if (!users.containsKey(unknownRecipient)) {
                                 valid = false;
@@ -281,6 +303,7 @@ public class DmtpServerThread extends Thread {
                 } else if (serverType == ServerType.TRANSFER_SERVER) {
                     ok();
                     writeMessageTransfer(dmtpFrom, dmtpTo, dmtpSubject, dmtpData);
+
                 }
             } else {
                 error("type begin to start new message");

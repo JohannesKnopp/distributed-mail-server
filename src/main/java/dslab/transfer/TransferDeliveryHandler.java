@@ -2,11 +2,16 @@ package dslab.transfer;
 
 import dslab.entity.Message;
 import dslab.exception.DmtpException;
+import dslab.nameserver.INameserverRemote;
 import dslab.util.Config;
 import dslab.util.Helper;
 
 import java.io.*;
 import java.net.*;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +28,7 @@ public class TransferDeliveryHandler extends Thread {
     private String componentId;
     private Map<String, String> acceptedDomains;
     private Config config;
+    private Registry registry;
 
     private String hostAddress;
     private int hostPort;
@@ -37,6 +43,13 @@ public class TransferDeliveryHandler extends Thread {
     }
 
     public void run() {
+        try {
+            registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+        } catch (RemoteException e) {
+            e.printStackTrace(); // TODO xd
+        }
+
+
         this.queue = new LinkedBlockingQueue<>();
         this.executor = Executors.newFixedThreadPool(32);
 
@@ -53,7 +66,7 @@ public class TransferDeliveryHandler extends Thread {
             try {
                 Message message = queue.take();
                 if (message != POISON_PILL) {
-                    MonitoringReporter m = new MonitoringReporter(message);
+                    MonitoringReporter m = new MonitoringReporter(message, registry);
                     executor.submit(m);
                 }
             } catch (InterruptedException | RejectedExecutionException e) {
@@ -78,12 +91,22 @@ public class TransferDeliveryHandler extends Thread {
 
         private Message message;
         private DatagramSocket udpSocket;
+        private Registry registry;
 
-        public MonitoringReporter(Message message) {
+        public MonitoringReporter(Message message, Registry registry) {
             this.message = message;
+            this.registry = registry;
         }
 
         public void run() {
+            // to u@planet.eav s@er.zeth
+            //to -> {planet.eav, er.zeth}
+
+            // earth.planet -> { paul@earth.planet, pepter/ ._ }
+            // univer.ze -> { pauliiii@univer.ze }
+
+
+
             Map<String, List<String>> groupByDomain = message.getTo().stream()
                     .collect(Collectors.groupingBy(s -> s.split("@")[1]));
 
@@ -100,7 +123,16 @@ public class TransferDeliveryHandler extends Thread {
 
                     udpSocket.send(packet);
 
-                    String address = acceptedDomains.get(s);
+                    String domain = s;
+                    INameserverRemote nextNameServer = (INameserverRemote) registry.lookup(config.getString("root_id"));
+                    while (domain.contains(".")) {
+                        String nextZone = domain.substring(domain.lastIndexOf('.') + 1);
+                        nextNameServer = nextNameServer.getNameserver(nextZone);
+                        domain = domain.substring(0, domain.lastIndexOf('.'));
+                    }
+
+                    String address = nextNameServer.lookup(domain);
+                    //String address = acceptedDomains.get(s);
 
                     TransferThread t = new TransferThread(message, address, failureAddress, s, groupByDomain.get(s).size());
                     executor.submit(t);
@@ -108,7 +140,11 @@ public class TransferDeliveryHandler extends Thread {
 
             } catch (IOException e) {
                 // Cannot handle
-            } finally {
+            } catch(NotBoundException e){
+                e.printStackTrace();
+
+            }
+            finally {
                 if (udpSocket != null && !udpSocket.isClosed()) {
                     udpSocket.close();
                 }

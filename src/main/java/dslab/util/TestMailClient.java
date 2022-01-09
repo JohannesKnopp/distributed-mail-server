@@ -66,7 +66,13 @@ public class TestMailClient {
         String message = "login trillian 12345";
         System.out.println(crypto.encryptMessage(message));
         client.sendMessage(crypto.encryptMessage(message));
+        System.out.println(crypto.decryptMessage(client.recvMessage()));
 
+        message = "show 0";
+        client.sendMessage(crypto.encryptMessage(message));
+        System.out.println(crypto.decryptMessage(client.recvMessage()));
+        System.out.println(crypto.decryptMessage(client.recvMessage()));
+        System.out.println(crypto.decryptMessage(client.recvMessage()));
         System.out.println(crypto.decryptMessage(client.recvMessage()));
 
     }

@@ -208,6 +208,7 @@ public class DmapServerThread extends Thread {
                             writeMessage(m.getId() + " " + m.getFrom() + " " + m.getSubject());
                         }
                     }
+                    ok();
                 } else {
                     ok();
                 }

@@ -9,9 +9,18 @@ public class Message {
     private ArrayList<String> to;
     private String subject;
     private String data;
+    private String hash;
 
     public Message () {}
 
+    public Message(Integer id, String from, ArrayList<String> to, String subject, String data, String hash) {
+        this.id = id;
+        this.from = from;
+        this.to = to;
+        this.subject = subject;
+        this.data = data;
+        this.hash = hash;
+    }
     public Message(Integer id, String from, ArrayList<String> to, String subject, String data) {
         this.id = id;
         this.from = from;

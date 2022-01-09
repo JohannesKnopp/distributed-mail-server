@@ -4,12 +4,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
+import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
+import java.util.Map;
 
 import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
 
@@ -22,6 +27,9 @@ public class Nameserver implements INameserver {
 
     private ServerSocket serverSocket;
     private Shell shell;
+    private INameserverRemote remote;
+    private Map<String, INameserverRemote> children; // TODO concurrent
+    private Map<String, String> mailboxServers; // TODO concurrent
 
     /**
      * Creates a new server instance.
@@ -36,9 +44,11 @@ public class Nameserver implements INameserver {
         this.config = config;
         this.in = in;
         this.out = out;
-        //shell = new Shell(in, out);
-        //shell.register(this);
-        //shell.setPrompt(componentId + "> ");
+        shell = new Shell(in, out);
+        shell.register(this);
+        shell.setPrompt(componentId + "> ");
+        children = new HashMap<String, INameserverRemote>();
+        mailboxServers = new HashMap<String, String>();
     }
 
     @Override
@@ -46,7 +56,7 @@ public class Nameserver implements INameserver {
         // 2 Cases, Root, Zone
         // Root -> Remote Registry
         try {
-            INameserverRemote remote = new NameserverRemote(componentId, config);
+            remote = new NameserverRemote(componentId, config, children, mailboxServers);
             if (config.containsKey("domain")) {
                 Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
                 INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
@@ -64,28 +74,36 @@ public class Nameserver implements INameserver {
             //TODO: ALLE EXCEPTIONS
         }
 
-        while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        shell.run();
+    }
+
+    @Override
+    @Command
+    public void nameservers() {
+        int counter = 1;
+        for (String nameserver : children.keySet()) {
+            out.println(counter + ". " + nameserver);
         }
     }
 
     @Override
-    public void nameservers() {
-        // TODO
-    }
-
-    @Override
+    @Command
     public void addresses() {
-        // TODO
+        int counter = 1;
+        for (String name : mailboxServers.keySet()) {
+            out.println(counter + ". " + name + " " + mailboxServers.get(name));
+        }
+
     }
 
     @Override
+    @Command
     public void shutdown() {
-        // TODO
+        try {
+            UnicastRemoteObject.unexportObject(remote, true);
+        } catch (NoSuchObjectException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws Exception {

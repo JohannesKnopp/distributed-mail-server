@@ -10,6 +10,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class NameserverRemote extends UnicastRemoteObject implements INameserverRemote {
 
@@ -23,7 +26,7 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
     private Map<String, INameserverRemote> children; // TODO concurrent
     private Map<String, String> mailboxServers; // TODO concurrent
 
-    public NameserverRemote(String componentId, Config config) throws RemoteException {
+    public NameserverRemote(String componentId, Config config, Map<String, INameserverRemote> children, Map<String, String> mailboxServers) throws RemoteException {
         super();
         registryPort = config.getInt("registry.port");
         registryHost = config.getString("registry.host");
@@ -33,8 +36,9 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
             domain = config.getString("domain");
         }
 
-        children = new HashMap<String, INameserverRemote>();
-        mailboxServers = new HashMap<String, String>();
+        this.children = children;
+        this.mailboxServers = mailboxServers;
+
     }
 
     @Override
@@ -42,7 +46,6 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
         try {
             if (domain.contains(".")) {
                 String lastDomain = domain.substring(domain.lastIndexOf(".")+1);
-                System.out.println(lastDomain);
                 if (children.containsKey(lastDomain)) {
                     INameserverRemote childRemote = children.get(lastDomain);
                     String subDomain = domain.substring(0, domain.lastIndexOf('.'));
@@ -97,5 +100,4 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
     public String lookup(String username) throws RemoteException {
         return mailboxServers.get(username);
     }
-
 }

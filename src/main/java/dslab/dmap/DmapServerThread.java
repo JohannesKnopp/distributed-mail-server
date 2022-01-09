@@ -3,19 +3,23 @@ package dslab.dmap;
 import dslab.entity.MailboxStorage;
 import dslab.entity.Message;
 import dslab.util.Config;
+import dslab.util.CryptographyServer;
 import dslab.util.Validator;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class DmapServerThread extends Thread {
 
@@ -63,6 +67,9 @@ public class DmapServerThread extends Thread {
 
     private class DmapClient implements Runnable {
 
+        //private SecretKey secretKey;
+        private CryptographyServer cryptographyServer;
+
         private Socket socket;
 
         private BufferedReader reader;
@@ -70,6 +77,9 @@ public class DmapServerThread extends Thread {
         private Config users;
 
         private boolean isLoggedIn;
+        private boolean startSecure;
+        private boolean useAES;
+        private boolean expectOk;
         private String username;
 
         public DmapClient(Socket socket) {
@@ -94,52 +104,30 @@ public class DmapServerThread extends Thread {
                     String[] parts = request.split("\\s");
 
                     if (parts.length != 0) {
-                        if (parts[0].equals("login")) {
-                            if (parts.length == 3) {
-                                login(parts[1], parts[2]);
+                        if (expectOk) {
+                            if ((!request.equals("ok"))) {
+                                error("protocol error");
+                                break;
                             } else {
-                                usage("login");
+                                expectOk = false;
                             }
-                        } else if (parts[0].equals("list")) {
-                            if (parts.length == 1) {
-                                list();
-                            } else {
-                                usage("list");
-                            }
-                        } else if (parts[0].equals("show")) {
-                            if (parts.length == 2) {
-                                if (Validator.isInteger(parts[1])) {
-                                    show(Integer.parseInt(parts[1]));
-                                } else {
-                                    error("must be valid id");
-                                    usage("show");
-                                }
-                            } else {
-                                usage("show");
-                            }
-                        } else if (parts[0].equals("delete")) {
-                            if (parts.length == 2) {
-                                if (Validator.isInteger(parts[1])) {
-                                    delete(Integer.parseInt(parts[1]));
-                                } else {
-                                    error("must be valid id");
-                                    usage("show");
-                                }
-                            } else {
-                                usage("delete");
-                            }
-                        } else if (parts[0].equals("logout")) {
-                            if (parts.length == 1) {
-                                logout();
-                            } else {
-                                usage("logout");
-                            }
-                        } else if (parts[0].equals("quit")) {
-                            if (parts.length == 1) {
-                                quit();
-                            } else {
-                                usage("quit");
-                            }
+                        } else if (request.equals("startsecure")) {
+                            // TODO überprüfung started etc.............
+                            startsecure();
+                        } else if (parts[0].equals("ok") && parts.length == 4) {
+                            challenge(parts[1], parts[2], parts[3]);
+                        } else if (parts[0].equals("login") && parts.length == 3) {
+                            login(parts[1], parts[2]);
+                        } else if (parts[0].equals("list") && parts.length == 1) {
+                            list();
+                        } else if (parts[0].equals("show") && parts.length == 2 && Validator.isInteger(parts[1])) {
+                            show(Integer.parseInt(parts[1]));
+                        } else if (parts[0].equals("delete") && parts.length == 2 && Validator.isInteger(parts[1])) {
+                            delete(Integer.parseInt(parts[1]));
+                        } else if (parts[0].equals("logout") && parts.length == 1) {
+                            logout();
+                        } else if (parts[0].equals("quit") && parts.length == 1) {
+                            quit();
                         } else {
                             error("protocol error");
                             break;
@@ -158,8 +146,38 @@ public class DmapServerThread extends Thread {
 
         public void initDmap() {
             isLoggedIn = false;
+            startSecure = false;
+            useAES = false;
+            expectOk = false;
             this.username = null;
             users = new Config("users-" + componentId.substring(8));
+            cryptographyServer = new CryptographyServer(componentId);
+        }
+
+        public void startsecure() {
+            //TODO boolean var ?
+            startSecure = true;
+            writer.println("ok " + componentId);
+            writer.flush();
+        }
+
+        public void challenge(String clientChallenge, String secretKey, String iv) {
+            // TODO AES
+            if (startSecure && !isLoggedIn) {
+                byte[] decodedKey = Base64.getDecoder().decode(secretKey);
+                SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+                cryptographyServer.setSecretKey(originalKey);
+
+                IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
+                cryptographyServer.setIv(ivSpec);
+
+                String s = cryptographyServer.decryptRSA(clientChallenge);
+                writer.println("ok " + s);
+                writer.flush();
+
+                expectOk = true;
+                useAES = true;
+            }
         }
 
         public void login(String username, String password) {
@@ -246,35 +264,6 @@ public class DmapServerThread extends Thread {
 
         public void error(String message) {
             writer.println("error " + message);
-            writer.flush();
-        }
-
-        public void usage(String command) {
-            String m;
-            switch (command) {
-                case "login":
-                    m = "login <username> <password>";
-                    break;
-                case "list":
-                    m = "list";
-                    break;
-                case "show":
-                    m = "show <message-id>";
-                    break;
-                case "delete":
-                    m = "delete <message-id>";
-                    break;
-                case "logout":
-                    m = "logout";
-                    break;
-                case "quit":
-                    m = "quit";
-                    break;
-                default:
-                    error("unknown command");
-                    return;
-            }
-            writer.println("Usage: " + m);
             writer.flush();
         }
 

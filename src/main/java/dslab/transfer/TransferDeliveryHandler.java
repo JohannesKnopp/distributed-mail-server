@@ -162,6 +162,7 @@ public class TransferDeliveryHandler extends Thread {
         private final ArrayList<String> to;
         private final String subject;
         private final String data;
+        private final String hash;
         private final int size;
 
         public TransferThread(Message message, String address, String failureAddress, String domain, int size) {
@@ -169,6 +170,7 @@ public class TransferDeliveryHandler extends Thread {
             this.to = message.getTo();
             this.subject = message.getSubject();
             this.data = message.getData();
+            this.hash = message.getHash();
             this.address = address;
             this.failureAddress = failureAddress;
             this.domain = domain;
@@ -197,7 +199,7 @@ public class TransferDeliveryHandler extends Thread {
 
                 writer = new PrintWriter(conn.getOutputStream());
 
-                Helper.readAndVerify(reader, "ok DMTP");
+                Helper.readAndVerify(reader, "ok DMTP2.0");
 
                 Helper.writeAndVerify(reader, writer, "begin", "ok");
 
@@ -208,6 +210,10 @@ public class TransferDeliveryHandler extends Thread {
                 Helper.writeAndVerify(reader, writer, "subject " + subject, "ok");
 
                 Helper.writeAndVerify(reader, writer, "to " + String.join(",", to), "ok " + size);
+
+                if (hash != null) {
+                    Helper.writeAndVerify(reader, writer, "hash " + hash, "ok");
+                }
 
                 Helper.writeAndVerify(reader, writer, "send", "ok");
 
@@ -260,7 +266,7 @@ public class TransferDeliveryHandler extends Thread {
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 writer = new PrintWriter(conn.getOutputStream());
 
-                Helper.readAndVerify(reader, "ok DMTP");
+                Helper.readAndVerify(reader, "ok DMTP2.0");
 
                 Helper.writeAndVerify(reader, writer, "begin", "ok");
 

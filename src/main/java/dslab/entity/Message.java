@@ -1,6 +1,7 @@
 package dslab.entity;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class Message {
 
@@ -9,7 +10,7 @@ public class Message {
     private ArrayList<String> to;
     private String subject;
     private String data;
-    private String hash;
+    private String hash; //optional
 
     public Message () {}
 
@@ -45,6 +46,10 @@ public class Message {
         return to;
     }
 
+    public String getAllTos() {
+        return String.join(",", to);
+    }
+
     public String getSubject() {
         return subject;
     }
@@ -53,5 +58,31 @@ public class Message {
         return data;
     }
 
+    public String getHash() {
+        return hash;
+    }
 
+    public void setFrom(String from) {
+        this.from = from;
+    }
+
+    public void setTo(ArrayList<String> to) {
+        this.to = to;
+    }
+
+    public void addTo(String to) {
+        this.to.add(to);
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
 }

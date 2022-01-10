@@ -84,8 +84,8 @@ public class DmtpServerThread extends Thread {
         executor.shutdown();
     }
 
-    private void writeMessageMailbox(String recipient, String from, ArrayList<String> to, String subject, String data) {
-        Message message = new Message(null, from, to, subject, data);
+    private void writeMessageMailbox(String recipient, String from, ArrayList<String> to, String subject, String data, String hash) {
+        Message message = new Message(null, from, to, subject, data, hash);
         mailboxStorage.writeMessage(recipient, message);
     }
 
@@ -122,6 +122,7 @@ public class DmtpServerThread extends Thread {
         private String dmtpFrom;
         private String dmtpSubject;
         private String dmtpData;
+        private String dmtpHash;
 
         private BufferedReader reader;
         private PrintWriter writer;
@@ -140,7 +141,7 @@ public class DmtpServerThread extends Thread {
 
                 writer = new PrintWriter(socket.getOutputStream());
 
-                writer.println("ok DMTP");
+                writer.println("ok DMTP2.0");
                 writer.flush();
 
                 String request;
@@ -159,6 +160,8 @@ public class DmtpServerThread extends Thread {
                             subject(request.substring(8));
                         } else if (parts[0].equals("data") && parts.length >= 2) {
                             data(request.substring(5));
+                        } else if (parts[0].equals("hash") && parts.length == 2) {
+                            hash(parts[1]);
                         } else if (request.equals("send")) {
                             send();
                         } else if (request.equals("quit")) {
@@ -186,6 +189,7 @@ public class DmtpServerThread extends Thread {
             dmtpFrom = null;
             dmtpSubject = null;
             dmtpData = null;
+            dmtpHash = null;
             users = null;
 
             if (serverType == ServerType.MAILBOX_SERVER) {
@@ -285,6 +289,15 @@ public class DmtpServerThread extends Thread {
             }
         }
 
+        public void hash(String hash) {
+            if (dmtpBegin) {
+                dmtpHash = hash;
+                ok();
+            } else {
+                error("type begin to start new message");
+            }
+        }
+
         public void send() {
             if (dmtpBegin) {
                 if (dmtpTo.isEmpty()) {
@@ -297,13 +310,12 @@ public class DmtpServerThread extends Thread {
                     error("no data");
                 } else if (serverType == ServerType.MAILBOX_SERVER) {
                     for (String recipient : dmtpTo) {
-                        writeMessageMailbox(recipient, dmtpFrom, dmtpTo, dmtpSubject, dmtpData);
+                        writeMessageMailbox(recipient, dmtpFrom, dmtpTo, dmtpSubject, dmtpData, dmtpHash);
                     }
                     ok();
                 } else if (serverType == ServerType.TRANSFER_SERVER) {
                     ok();
-                    writeMessageTransfer(dmtpFrom, dmtpTo, dmtpSubject, dmtpData);
-
+                    writeMessageTransfer(dmtpFrom, dmtpTo, dmtpSubject, dmtpData, dmtpHash);
                 }
             } else {
                 error("type begin to start new message");
@@ -349,8 +361,8 @@ public class DmtpServerThread extends Thread {
             }
         }
 
-        private void writeMessageTransfer(String from, ArrayList<String> to, String subject, String data) {
-            transferDeliveryHandler.addTask(new Message(null, from, to, subject, data));
+        private void writeMessageTransfer(String from, ArrayList<String> to, String subject, String data, String hash) {
+            transferDeliveryHandler.addTask(new Message(null, from, to, subject, data, hash));
         }
     }
 

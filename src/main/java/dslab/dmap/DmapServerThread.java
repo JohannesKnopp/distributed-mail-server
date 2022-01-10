@@ -96,7 +96,7 @@ public class DmapServerThread extends Thread {
 
                 writer = new PrintWriter(socket.getOutputStream());
 
-                writeMessage("ok DMAP");
+                writeMessage("ok DMAP2.0");
 
                 String request;
 
@@ -225,6 +225,9 @@ public class DmapServerThread extends Thread {
                     writeMessage("to " + String.join(",", m.getTo()));
                     writeMessage("subject " + m.getSubject());
                     writeMessage("data " + m.getData());
+                    String hash = m.getHash() != null ? " " + m.getHash() : "";
+                    writeMessage("hash" + hash);
+                    writeMessage("ok");
                 } else {
                     error("unknown message id");
                 }

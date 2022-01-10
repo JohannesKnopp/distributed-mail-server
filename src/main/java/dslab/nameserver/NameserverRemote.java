@@ -9,6 +9,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class NameserverRemote extends UnicastRemoteObject implements INameserverRemote {
@@ -21,10 +22,10 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
     private String domain;
     private PrintStream out;
 
-    private Map<String, INameserverRemote> children; // TODO concurrent
-    private Map<String, String> mailboxServers; // TODO concurrent
+    private ConcurrentHashMap<String, INameserverRemote> children; // TODO concurrent
+    private ConcurrentHashMap<String, String> mailboxServers; // TODO concurrent
 
-    public NameserverRemote(String componentId, Config config, Map<String, INameserverRemote> children, Map<String, String> mailboxServers, PrintStream out) throws RemoteException {
+    public NameserverRemote(String componentId, Config config, ConcurrentHashMap<String, INameserverRemote> children, ConcurrentHashMap<String, String> mailboxServers, PrintStream out) throws RemoteException {
         super();
         registryPort = config.getInt("registry.port");
         registryHost = config.getString("registry.host");

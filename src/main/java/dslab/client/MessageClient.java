@@ -7,6 +7,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
@@ -74,7 +75,24 @@ public class MessageClient implements IMessageClient, Runnable {
             String[] wpa = getSecurity(cid);
             dmapWriter.println("ok " + wpa[0] + " " + wpa[1] + " " + wpa[2]);
 
-            dmapReader.readLine();
+            String result = dmapReader.readLine().substring(3);
+            String expected =  new String(crypto.getChallenge(), StandardCharsets.US_ASCII);
+
+            byte[] r = result.getBytes();
+            byte[] e = expected.getBytes();
+
+            boolean same = true;
+            for (int i = 0; i < 32; i++) {
+                if (r[i] != e[i]) {
+                    same = false;
+                    break;
+                }
+            }
+
+            if (!same) {
+                out.println("Failed challenge");
+                shutdown();
+            }
 
             dmapWriter.println(crypto.encryptMessage("ok"));
             String message = "login " + config.getString("mailbox.user") + " " + config.getString("mailbox.password");

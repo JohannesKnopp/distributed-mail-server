@@ -12,8 +12,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
@@ -28,8 +31,8 @@ public class Nameserver implements INameserver {
     private ServerSocket serverSocket;
     private Shell shell;
     private INameserverRemote remote;
-    private Map<String, INameserverRemote> children; // TODO concurrent
-    private Map<String, String> mailboxServers; // TODO concurrent
+    private ConcurrentHashMap<String, INameserverRemote> children; // TODO concurrent
+    private ConcurrentHashMap<String, String> mailboxServers; // TODO concurrent
 
     /**
      * Creates a new server instance.
@@ -47,8 +50,8 @@ public class Nameserver implements INameserver {
         shell = new Shell(in, out);
         shell.register(this);
         shell.setPrompt(componentId + "> ");
-        children = new HashMap<String, INameserverRemote>();
-        mailboxServers = new HashMap<String, String>();
+        children = new ConcurrentHashMap<String, INameserverRemote>();
+        mailboxServers = new ConcurrentHashMap<String, String>();
     }
 
     @Override
@@ -104,6 +107,9 @@ public class Nameserver implements INameserver {
         } catch (NoSuchObjectException e) {
             e.printStackTrace();
         }
+
+        shell.out().println("Shutting down...");
+        throw new StopShellException();
     }
 
     public static void main(String[] args) throws Exception {

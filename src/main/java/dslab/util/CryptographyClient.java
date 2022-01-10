@@ -3,6 +3,7 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -44,14 +45,12 @@ public class CryptographyClient {
         }
     }
 
-    private void loadPublicKey() {
-        try {
+    private void loadPublicKey() throws Exception {
+
             byte[] publicKeyBytes = Files.readAllBytes(Paths.get("keys\\client\\" + componentId + "_pub.der"));
             publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyBytes));
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
     }
 
     private void generateChallenge() {

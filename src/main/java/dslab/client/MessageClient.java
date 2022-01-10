@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.entity.Message;
@@ -73,17 +74,13 @@ public class MessageClient implements IMessageClient, Runnable {
             String cid = dmapReader.readLine().split("\\s")[1];
             String[] wpa = getSecurity(cid);
             dmapWriter.println("ok " + wpa[0] + " " + wpa[1] + " " + wpa[2]);
-            String c = dmapReader.readLine().split("\\s")[1];
-            if (!c.equals(new String(crypto.getChallenge(), StandardCharsets.US_ASCII))) {
-                //Decoded challenges not the same -> terminate conection
-                shutdown(); // TODO message to user
-            }
+
+
+
             dmapWriter.println(crypto.encryptMessage("ok"));
             String message = "login " + config.getString("mailbox.user") + " " + config.getString("mailbox.password");
             dmapWriter.println(crypto.encryptMessage(message));
-            String r = crypto.encryptMessage(dmapReader.readLine());
-            System.out.println(r);
-
+            dmapReader.readLine();
 
         } catch (UnknownHostException e) {
             System.out.println("Cannot connect to host: " + e.getMessage());
@@ -94,31 +91,18 @@ public class MessageClient implements IMessageClient, Runnable {
         } catch (IOException e) {
             // you should properly handle all other exceptions
             throw new UncheckedIOException(e);
-        } //finally {
-//            if (dmapSocket != null && !dmapSocket.isClosed()) {
-//                try {
-//                    dmapSocket.close();
-//                } catch (IOException e) {
-//                    // Ignored because we cannot handle it
-//                }
-//            }
-//
-//            if (userInputReader != null) {
-//                try {
-//                    userInputReader.close();
-//                } catch (IOException e) {
-//                    // Ignored because we cannot handle it
-//                }
-//            }
-//        }
-    //}
+        }
 
         shell.run();
     }
 
     public String[] getSecurity(String componentId){
         String[] out = new String[3];
-        crypto = new CryptographyClient(componentId);
+        try {
+            crypto = new CryptographyClient(componentId);
+        }catch (Exception e){
+            shutdown();
+        }
         // ok <client-challenge> <secret-key> <iv>
         crypto.generateKey();
         crypto.generateIv();
@@ -226,8 +210,6 @@ public class MessageClient implements IMessageClient, Runnable {
                     out.println("ok");
                 } else {
                     out.println("error hashes are different");
-                    out.println(actualHash);
-                    out.println(calculatedHash);
                 }
             } else {
                 out.println("error no hash provided in the message");
@@ -308,7 +290,23 @@ public class MessageClient implements IMessageClient, Runnable {
     @Override
     @Command
     public void shutdown() {
+        if (dmapSocket != null && !dmapSocket.isClosed()) {
+            try {
+                dmapSocket.close();
+            } catch (IOException e) {
+                // Ignored because we cannot handle it
+            }
+        }
 
+        if (userInputReader != null) {
+            try {
+                userInputReader.close();
+            } catch (IOException e) {
+                // Ignored because we cannot handle it
+            }
+        }
+        shell.out().println("Shutting down...");
+        throw new StopShellException();
     }
 
     public static void main(String[] args) throws Exception {

@@ -56,7 +56,7 @@ public class Nameserver implements INameserver {
         // 2 Cases, Root, Zone
         // Root -> Remote Registry
         try {
-            remote = new NameserverRemote(componentId, config, children, mailboxServers);
+            remote = new NameserverRemote(componentId, config, children, mailboxServers, out);
             if (config.containsKey("domain")) {
                 Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
                 INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));

@@ -38,7 +38,7 @@ public class DedovClass {
             encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
             String secretMessage = "Stefan Aufmuth";
-            byte[] secretMessageBytes = secretMessage.getBytes(StandardCharsets.UTF_8);
+            byte[] secretMessageBytes = secretMessage.getBytes(StandardCharsets.US_ASCII);
             byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
 
             String encodedMessage = Base64.getEncoder().encodeToString(encryptedMessageBytes);

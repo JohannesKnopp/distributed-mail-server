@@ -58,7 +58,6 @@ public class MessageClient implements IMessageClient, Runnable {
     public void run() {
         dmapSocket = null;
         userInputReader = null;
-        String s;
 
         try {
             dmapSocket = new Socket(config.getString("mailbox.host"), config.getInt("mailbox.port"));
@@ -75,7 +74,7 @@ public class MessageClient implements IMessageClient, Runnable {
             String[] wpa = getSecurity(cid);
             dmapWriter.println("ok " + wpa[0] + " " + wpa[1] + " " + wpa[2]);
 
-
+            dmapReader.readLine();
 
             dmapWriter.println(crypto.encryptMessage("ok"));
             String message = "login " + config.getString("mailbox.user") + " " + config.getString("mailbox.password");

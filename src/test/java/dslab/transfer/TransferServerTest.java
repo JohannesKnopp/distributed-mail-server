@@ -43,9 +43,8 @@ public class TransferServerTest extends TestBase {
         }
 
         LOG.info("Shutting down component " + component);
-        Thread.sleep(Constants.COMPONENT_TEARDOWN_WAIT);
         in.addLine("shutdown"); // send "shutdown" command to command line
-        Thread.sleep(1000);
+        Thread.sleep(Constants.COMPONENT_TEARDOWN_WAIT);
 
         try {
             LOG.info("Waiting for thread to stop for component " + component);

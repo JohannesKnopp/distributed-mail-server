@@ -65,24 +65,36 @@ public class MessageClient implements IMessageClient, Runnable {
             dmapReader = new BufferedReader(new InputStreamReader(dmapSocket.getInputStream()));
             dmapWriter = new PrintWriter(dmapSocket.getOutputStream(), true);
 
-            System.out.println("Client: " + config.getString("mailbox.user") + " is up! Enter command.");
-
-            // S: ok DMAP2.0
             Helper.readAndVerify(dmapReader, "ok DMAP2.0");
+            System.out.println("Client: " + config.getString("mailbox.user") + " is up! Enter command.");
 
             dmapWriter.println("startsecure");
             String cid = dmapReader.readLine().split("\\s")[1];
-            String[] wpa = getSecurity(cid);
-            dmapWriter.println("ok " + wpa[0] + " " + wpa[1] + " " + wpa[2]);
+           // String[] wpa = getSecurity(cid);
+            //String toEncrypt = "ok " + wpa[0] + " " + wpa[1] + " " + wpa[2];
 
-            String result = dmapReader.readLine().substring(3);
+            try {
+                crypto = new CryptographyClient(cid);
+            }catch (Exception e){
+                shutdown();
+            }
+            // ok <client-challenge> <secret-key> <iv>
+            crypto.generateKey();
+            crypto.generateIv();
+
+            String toEncrypt = "ok " + crypto.getChallengeStringEncoded() + " " + crypto.getSecretKeyEncoded() + " " + crypto.getIvEncoded();
+            System.out.println(toEncrypt);
+            dmapWriter.println(crypto.encryptRSAEncoded(toEncrypt));
+            dmapWriter.flush();
+
+            String result = crypto.decryptMessage(dmapReader.readLine()).substring(3);
             String expected =  new String(crypto.getChallenge(), StandardCharsets.US_ASCII);
 
             byte[] r = result.getBytes();
             byte[] e = expected.getBytes();
 
             boolean same = true;
-            for (int i = 0; i < 32; i++) {
+            for (int i = 0; i < r.length; i++) {
                 if (r[i] != e[i]) {
                     same = false;
                     break;
@@ -114,6 +126,25 @@ public class MessageClient implements IMessageClient, Runnable {
     }
 
     public String[] getSecurity(String componentId){
+        String[] out = new String[3];
+        try {
+            crypto = new CryptographyClient(componentId);
+        }catch (Exception e){
+            shutdown();
+        }
+        // ok <client-challenge> <secret-key> <iv>
+        crypto.generateKey();
+        crypto.generateIv();
+        String challenge = crypto.getEncodedEncryptedChallenge();
+        String secretKey = crypto.encodedSecretKey();
+        String iv = crypto.encodedIv();
+        out[0] = challenge;
+        out[1] = secretKey;
+        out[2] = iv;
+        return out;
+    }
+
+    public String[] getData(String componentId) {
         String[] out = new String[3];
         try {
             crypto = new CryptographyClient(componentId);

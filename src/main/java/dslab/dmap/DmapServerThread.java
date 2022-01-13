@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
@@ -79,7 +80,8 @@ public class DmapServerThread extends Thread {
 
         private boolean isLoggedIn;
         private boolean startSecure;
-        private boolean useAES; //TODO
+        private boolean useAES;
+        private boolean useRSA;
         private boolean expectOk;
         private String username;
 
@@ -149,6 +151,7 @@ public class DmapServerThread extends Thread {
             isLoggedIn = false;
             startSecure = false;
             useAES = false;
+            useRSA = false;
             expectOk = false;
             this.username = null;
             users = new Config("users-" + componentId.substring(8));
@@ -159,23 +162,30 @@ public class DmapServerThread extends Thread {
             //TODO boolean var ?
             startSecure = true;
             writeMessage("ok " + componentId);
+            useRSA = true;
         }
 
         public void challenge(String clientChallenge, String secretKey, String iv) {
             if (startSecure && !isLoggedIn) {
                 byte[] decodedKey = Base64.getDecoder().decode(secretKey);
+                //byte[] decodedKey = secretKey.getBytes();
                 SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
                 cryptographyServer.setSecretKey(originalKey);
 
                 byte[] decodedIv = Base64.getDecoder().decode(iv);
+                //byte[] decodedIv = iv.getBytes();
                 IvParameterSpec ivSpec = new IvParameterSpec(decodedIv);
                 cryptographyServer.setIv(ivSpec);
 
-                String s = cryptographyServer.decryptRSA(clientChallenge);
+                //String s = cryptographyServer.decryptRSA(clientChallenge);
+                String s = new String(Base64.getDecoder().decode(clientChallenge), StandardCharsets.US_ASCII);
+
+                useAES = true;
+                useRSA = false;
+
                 writeMessage("ok " + s);
 
                 expectOk = true;
-                useAES = true;
             }
         }
 
@@ -300,13 +310,17 @@ public class DmapServerThread extends Thread {
                 message = cryptographyServer.encryptMessage(message);
             }
             writer.println(message);
+            System.out.println("ICH MACH SENDUNG: " + message);
             writer.flush();
         }
 
         private String recvMessage(String message) {
             if (useAES) {
                 message = cryptographyServer.decryptMessage(message);
+            } else if (useRSA) {
+                message = cryptographyServer.decryptRSA(message);
             }
+            System.out.println("TEEEEST: " + message);
             return message;
         }
 

@@ -79,8 +79,14 @@ public class CryptographyClient {
         }
     }
 
-    public byte[] getChallenge() {
-        return challenge;
+    public String encryptRSAEncoded(String message) {
+        try {
+            byte[] messageBytes = message.getBytes();
+            return Base64.getEncoder().encodeToString(cipher.doFinal(messageBytes));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public byte[] getEncryptedChallenge() {
@@ -93,7 +99,7 @@ public class CryptographyClient {
 
     //TODO AES
 
-    public SecretKey generateKey(){
+    public void generateKey(){
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
             keyGenerator.init(128);
@@ -101,7 +107,6 @@ public class CryptographyClient {
         }catch (NoSuchAlgorithmException e){
             e.printStackTrace();
         }
-        return null;
     }
 
     /*public static SecretKey getKeyFromMessage(String msg, String salt)
@@ -166,4 +171,33 @@ public class CryptographyClient {
     public String encodedSecretKey() {
         return Base64.getEncoder().encodeToString(secretKey.getEncoded());
     }
+
+    public byte[] getChallenge() {
+        return challenge;
+    }
+
+    public String getChallengeString() {
+        return new String(challenge, StandardCharsets.US_ASCII);
+    }
+
+    public String getIv() {
+        return new String(byteIv, StandardCharsets.US_ASCII);
+    }
+
+    public String getSecretKey() {
+        return new String(secretKey.getEncoded(), StandardCharsets.US_ASCII);
+    }
+
+    public String getChallengeStringEncoded() {
+       return Base64.getEncoder().encodeToString(challenge);
+    }
+
+    public String getIvEncoded() {
+        return Base64.getEncoder().encodeToString(byteIv);
+    }
+
+    public String getSecretKeyEncoded() {
+        return Base64.getEncoder().encodeToString(secretKey.getEncoded());
+    }
+
 }

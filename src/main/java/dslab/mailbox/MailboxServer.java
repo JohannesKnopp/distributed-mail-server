@@ -75,13 +75,16 @@ public class MailboxServer implements IMailboxServer, Runnable {
     @Override
     @Command
     public void shutdown() {
+        System.out.println("before shutdown");
         if (dmtpServerThread != null) {
             dmtpServerThread.shutdown();
         }
-
+        System.out.println("imminent shutdown");
         if (dmtpServerSocket != null && !dmtpServerSocket.isClosed()) {
             try {
+                System.out.println("during shutdown");
                 dmtpServerSocket.close();
+                System.out.println("after shutdown");
             } catch (IOException e) {
                 System.err.println("Error while closing DMTP server socket: " + e.getMessage());
             }

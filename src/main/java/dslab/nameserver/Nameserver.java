@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
+import java.rmi.AccessException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +35,10 @@ public class Nameserver implements INameserver {
     private INameserverRemote remote;
     private ConcurrentHashMap<String, INameserverRemote> children; // TODO concurrent
     private ConcurrentHashMap<String, String> mailboxServers; // TODO concurrent
+    private Registry registry;
+
+    private ArrayList<INameserverRemote> registries;
+    private ArrayList<Registry> regs;
 
     /**
      * Creates a new server instance.
@@ -52,6 +58,8 @@ public class Nameserver implements INameserver {
         shell.setPrompt(componentId + "> ");
         children = new ConcurrentHashMap<String, INameserverRemote>();
         mailboxServers = new ConcurrentHashMap<String, String>();
+        registries = new ArrayList<INameserverRemote>();
+        regs = new ArrayList<Registry>();
     }
 
     @Override
@@ -61,11 +69,14 @@ public class Nameserver implements INameserver {
         try {
             remote = new NameserverRemote(componentId, config, children, mailboxServers, out);
             if (config.containsKey("domain")) {
-                Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+                registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
                 INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
                 registryRemote.registerNameserver(config.getString("domain"), remote);
+                registries.add(registryRemote);
+                regs.add(registry);
             } else {
-                Registry registry = LocateRegistry.createRegistry(config.getInt("registry.port"));
+                registry = LocateRegistry.createRegistry(config.getInt("registry.port"));
+                regs.add(registry);
                 try {
                     registry.bind(config.getString("root_id"), remote);
                 } catch (Exception e) {
@@ -102,9 +113,40 @@ public class Nameserver implements INameserver {
     @Override
     @Command
     public void shutdown() {
+//        try {
+//            UnicastRemoteObject.unexportObject(remote, true);
+//            if (!config.containsKey("domain")) {
+//                registry.unbind(config.getString("root_id"));
+//            }
+//        } catch (NoSuchObjectException e) {
+//            e.printStackTrace();
+//        } catch (AccessException e) {
+//            e.printStackTrace();
+//        } catch (RemoteException e) {
+//            e.printStackTrace();
+//        } catch (NotBoundException e) {
+//            e.printStackTrace();
+//        }
+
         try {
             UnicastRemoteObject.unexportObject(remote, true);
+            if (!config.containsKey("domain")) {
+
+                for (INameserverRemote reg : registries) {
+                    UnicastRemoteObject.unexportObject(reg, true);
+                }
+                for (Registry reg: regs) {
+                    UnicastRemoteObject.unexportObject(reg, true);
+                }
+                registry.unbind(config.getString("root_id"));
+            }
         } catch (NoSuchObjectException e) {
+            e.printStackTrace();
+        } catch (AccessException e) {
+            e.printStackTrace();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (NotBoundException e) {
             e.printStackTrace();
         }
 

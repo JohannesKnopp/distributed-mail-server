@@ -56,9 +56,8 @@ public class DmtpServerThread extends Thread {
 
     public void run() {
         this.clients = new ConcurrentLinkedQueue<>();
-        init();
-
         executor = Executors.newCachedThreadPool();
+        init();
         while (!quit) {
             try {
                 DmtpClient client = new DmtpClient(serverSocket.accept());
@@ -101,6 +100,7 @@ public class DmtpServerThread extends Thread {
             Registry registry = null;
             try {
                 registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+                System.out.println(registry.toString());
                 INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
                 registryRemote.registerMailboxServer(config.getString("domain"), "localhost:" + config.getString("dmtp.tcp.port"));
             } catch (RemoteException | NotBoundException e) {
@@ -108,6 +108,9 @@ public class DmtpServerThread extends Thread {
             } catch (InvalidDomainException e) {
                 e.printStackTrace();
             } catch (AlreadyRegisteredException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                System.out.println("HEHRE");
                 e.printStackTrace();
             }
         }

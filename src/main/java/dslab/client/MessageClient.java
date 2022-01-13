@@ -66,7 +66,7 @@ public class MessageClient implements IMessageClient, Runnable {
             dmapWriter = new PrintWriter(dmapSocket.getOutputStream(), true);
 
             Helper.readAndVerify(dmapReader, "ok DMAP2.0");
-            System.out.println("Client: " + config.getString("mailbox.user") + " is up! Enter command.");
+            out.println("Client: " + config.getString("mailbox.user") + " is up! Enter command.");
 
             dmapWriter.println("startsecure");
             String cid = dmapReader.readLine().split("\\s")[1];
@@ -85,6 +85,7 @@ public class MessageClient implements IMessageClient, Runnable {
             String toEncrypt = "ok " + crypto.getChallengeStringEncoded() + " " + crypto.getSecretKeyEncoded() + " " + crypto.getIvEncoded();
             System.out.println(toEncrypt);
             dmapWriter.println(crypto.encryptRSAEncoded(toEncrypt));
+            System.out.println(crypto.encryptRSAEncoded(toEncrypt));
             dmapWriter.flush();
 
             String result = crypto.decryptMessage(dmapReader.readLine()).substring(3);
@@ -196,7 +197,6 @@ public class MessageClient implements IMessageClient, Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -207,7 +207,6 @@ public class MessageClient implements IMessageClient, Runnable {
             dmapWriter.println(crypto.encryptMessage("delete " + id));
             out.println(crypto.decryptMessage(dmapReader.readLine()));
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -263,14 +262,9 @@ public class MessageClient implements IMessageClient, Runnable {
                 out.println("error no hash provided in the message");
             }
         } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    // TODO ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM
-    // TODO ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM
-    // TODO ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM
-    // TODO ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM ALARM
     public String extractDataFromLine(String line) {
         return line.substring(line.indexOf(" ") + 1);
     }
@@ -299,7 +293,6 @@ public class MessageClient implements IMessageClient, Runnable {
         try {
             m.setHash(HashingUtil.calculateEncodedHash(m));
         } catch (Exception e) {
-            e.printStackTrace();
         }
 
         try {
@@ -328,8 +321,6 @@ public class MessageClient implements IMessageClient, Runnable {
             Helper.writeAndVerify(reader, writer, "quit", "ok bye");
 
         } catch (IOException e) {
-            out.println(e.getMessage());
-            return;
         }
 
         out.println("ok");

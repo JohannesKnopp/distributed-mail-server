@@ -33,8 +33,8 @@ public class Nameserver implements INameserver {
     private ServerSocket serverSocket;
     private Shell shell;
     private INameserverRemote remote;
-    private ConcurrentHashMap<String, INameserverRemote> children; // TODO concurrent
-    private ConcurrentHashMap<String, String> mailboxServers; // TODO concurrent
+    private ConcurrentHashMap<String, INameserverRemote> children;
+    private ConcurrentHashMap<String, String> mailboxServers;
     private Registry registry;
 
     private ArrayList<INameserverRemote> registries;
@@ -80,12 +80,11 @@ public class Nameserver implements INameserver {
                 try {
                     registry.bind(config.getString("root_id"), remote);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //nothing more to do
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            //TODO: ALLE EXCEPTIONS
+            //nothing more to do
         }
 
         shell.run();
@@ -113,20 +112,6 @@ public class Nameserver implements INameserver {
     @Override
     @Command
     public void shutdown() {
-//        try {
-//            UnicastRemoteObject.unexportObject(remote, true);
-//            if (!config.containsKey("domain")) {
-//                registry.unbind(config.getString("root_id"));
-//            }
-//        } catch (NoSuchObjectException e) {
-//            e.printStackTrace();
-//        } catch (AccessException e) {
-//            e.printStackTrace();
-//        } catch (RemoteException e) {
-//            e.printStackTrace();
-//        } catch (NotBoundException e) {
-//            e.printStackTrace();
-//        }
 
         try {
             UnicastRemoteObject.unexportObject(remote, true);
@@ -140,14 +125,8 @@ public class Nameserver implements INameserver {
                 }
                 registry.unbind(config.getString("root_id"));
             }
-        } catch (NoSuchObjectException e) {
-            e.printStackTrace();
-        } catch (AccessException e) {
-            e.printStackTrace();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (NotBoundException e) {
-            e.printStackTrace();
+        } catch (RemoteException | NotBoundException e) {
+            //nothing more to do
         }
 
         shell.out().println("Shutting down...");

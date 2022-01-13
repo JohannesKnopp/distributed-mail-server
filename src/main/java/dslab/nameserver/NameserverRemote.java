@@ -22,8 +22,8 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
     private String domain;
     private PrintStream out;
 
-    private ConcurrentHashMap<String, INameserverRemote> children; // TODO concurrent
-    private ConcurrentHashMap<String, String> mailboxServers; // TODO concurrent
+    private ConcurrentHashMap<String, INameserverRemote> children;
+    private ConcurrentHashMap<String, String> mailboxServers;
 
     public NameserverRemote(String componentId, Config config, ConcurrentHashMap<String, INameserverRemote> children, ConcurrentHashMap<String, String> mailboxServers, PrintStream out) throws RemoteException {
         super();
@@ -65,7 +65,6 @@ public class NameserverRemote extends UnicastRemoteObject implements INameserver
                 }
             }
         } catch (AlreadyRegisteredException e) {
-            e.printStackTrace();
         }
     }
 

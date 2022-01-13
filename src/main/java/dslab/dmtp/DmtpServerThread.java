@@ -100,18 +100,10 @@ public class DmtpServerThread extends Thread {
             Registry registry = null;
             try {
                 registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
-                System.out.println(registry.toString());
                 INameserverRemote registryRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
                 registryRemote.registerMailboxServer(config.getString("domain"), "localhost:" + config.getString("dmtp.tcp.port"));
-            } catch (RemoteException | NotBoundException e) {
-                e.printStackTrace();
-            } catch (InvalidDomainException e) {
-                e.printStackTrace();
-            } catch (AlreadyRegisteredException e) {
-                e.printStackTrace();
             } catch (Exception e) {
-                System.out.println("HEHRE");
-                e.printStackTrace();
+                //nothing more to do
             }
         }
     }
@@ -180,7 +172,6 @@ public class DmtpServerThread extends Thread {
                     }
                 }
             } catch (IOException e) {
-                //System.out.println("Error while communicating via DMTP: " +  e.getMessage());
             } finally {
                 closeConnection();
             }

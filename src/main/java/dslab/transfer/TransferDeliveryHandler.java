@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
 
 public class TransferDeliveryHandler extends Thread {
 
-   // TODO Add queue of mails | add fixed Thread pool | work through queue
-
     private LinkedBlockingQueue<Message> queue;
     private ExecutorService executor;
     private boolean quit = false;
@@ -46,7 +44,7 @@ public class TransferDeliveryHandler extends Thread {
         try {
             registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
         } catch (RemoteException e) {
-            e.printStackTrace(); // TODO xd
+            ////nothing more to do
         }
 
 
@@ -70,7 +68,7 @@ public class TransferDeliveryHandler extends Thread {
                     executor.submit(m);
                 }
             } catch (InterruptedException | RejectedExecutionException e) {
-                //e.printStackTrace();
+                ////nothing more to do
             }
         }
     }
@@ -141,7 +139,7 @@ public class TransferDeliveryHandler extends Thread {
             } catch (IOException e) {
                 // Cannot handle
             } catch(NotBoundException e){
-                e.printStackTrace();
+                //nothing more to do
 
             }
             finally {
@@ -229,7 +227,7 @@ public class TransferDeliveryHandler extends Thread {
                     try {
                         conn.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        //nothing more to do
                     }
                 }
 
@@ -270,7 +268,6 @@ public class TransferDeliveryHandler extends Thread {
 
                 Helper.writeAndVerify(reader, writer, "begin", "ok");
 
-                // TODO add componentId
                 Helper.writeAndVerify(reader, writer, "from no-reply@" + componentId + ".edu", "ok");
 
                 Helper.writeAndVerify(reader, writer, "to " + recipient, "ok 1");

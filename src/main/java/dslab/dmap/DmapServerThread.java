@@ -115,7 +115,6 @@ public class DmapServerThread extends Thread {
                                 expectOk = false;
                             }
                         } else if (request.equals("startsecure")) {
-                            // TODO überprüfung started etc.............
                             startsecure();
                         } else if (parts[0].equals("ok") && parts.length == 4) {
                             challenge(parts[1], parts[2], parts[3]);
@@ -141,7 +140,6 @@ public class DmapServerThread extends Thread {
                     }
                 }
             } catch (IOException e) {
-                //System.out.println("Error while communication via DMAP");
             } finally {
                 closeConnection();
             }
@@ -159,7 +157,6 @@ public class DmapServerThread extends Thread {
         }
 
         public void startsecure() {
-            //TODO boolean var ?
             startSecure = true;
             writeMessage("ok " + componentId);
             useRSA = true;
@@ -310,7 +307,6 @@ public class DmapServerThread extends Thread {
                 message = cryptographyServer.encryptMessage(message);
             }
             writer.println(message);
-            System.out.println("ICH MACH SENDUNG: " + message);
             writer.flush();
         }
 
@@ -320,7 +316,6 @@ public class DmapServerThread extends Thread {
             } else if (useRSA) {
                 message = cryptographyServer.decryptRSA(message);
             }
-            System.out.println("TEEEEST: " + message);
             return message;
         }
 

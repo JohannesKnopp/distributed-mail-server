@@ -36,7 +36,7 @@ public class CryptographyServer {
             privateKeyBytes = Files.readAllBytes(Paths.get("keys\\server\\" + componentId + ".der"));
             privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKeyBytes));
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            e.printStackTrace();
+            //nothing more to do
         }
     }
 
@@ -48,33 +48,15 @@ public class CryptographyServer {
             decryptedChallengeBytes = decryptCipher.doFinal(decode(challenge));
 
             return new String(decryptedChallengeBytes, StandardCharsets.US_ASCII);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException |NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+            //nothing more to do
         }
 
-        return null; // TODO error handling ?
+        return null;
     }
 
     public byte[] decode(String data){
         return Base64.getDecoder().decode(data);
-    }
-
-    public static SecretKey getKeyFromMessage(String msg, String salt)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        KeySpec spec = new PBEKeySpec(msg.toCharArray(), salt.getBytes(), 65536, 256);
-        SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
-                .getEncoded(), "AES");
-        return secret;
     }
 
     public String encrypt(String input, SecretKey key, IvParameterSpec iv) {
@@ -85,7 +67,7 @@ public class CryptographyServer {
             byte[] cipherText = cipher.doFinal(input.getBytes());
             return Base64.getEncoder().encodeToString(cipherText);
         }catch (Exception e){
-            e.printStackTrace();
+            //nothing more to do
         }
         return null;
     }
@@ -98,7 +80,7 @@ public class CryptographyServer {
 
             return new String(plainText);
         }catch (Exception e){
-            e.printStackTrace();
+            //nothing more to do
         }
         return null;
     }

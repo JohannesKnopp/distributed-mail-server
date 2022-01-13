@@ -58,7 +58,6 @@ public class MessageClientStartupTest {
         dmapServer.setSocketAcceptor(socket -> {
             try (JunitSocketClient client = new JunitSocketClient(socket)) {
                 client.send("ok DMAP2.0");
-                System.out.println("hit");
                 err.checkThat("expected first command from client to be startsecure", client.read(), is("startsecure"));
 
                 connected.countDown();

@@ -41,15 +41,19 @@ public class CryptographyClient {
             encryptChallenge();
             encodeEncryptedChallenge();
         } catch (Exception e) {
-            e.printStackTrace();
+            //nothing more to do
         }
     }
 
-    private void loadPublicKey() throws Exception {
+    private void loadPublicKey() {
 
+        try {
             byte[] publicKeyBytes = Files.readAllBytes(Paths.get("keys\\client\\" + componentId + "_pub.der"));
             publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyBytes));
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        } catch (Exception e) {
+
+        }
 
     }
 
@@ -59,7 +63,7 @@ public class CryptographyClient {
             SecureRandom.getInstanceStrong().nextBytes(challenge);
             this.challenge = challenge;
         } catch (Exception e) {
-            e.printStackTrace();
+            //nothing more to do
         }
     }
 
@@ -67,7 +71,7 @@ public class CryptographyClient {
         try {
            encryptedChallenge = cipher.doFinal(challenge);
         } catch (Exception e) {
-            e.printStackTrace();
+            //nothing more to do
         }
     }
 
@@ -75,7 +79,7 @@ public class CryptographyClient {
         try {
             encodedEncryptedChallenge = Base64.getEncoder().encodeToString(encryptedChallenge);
         } catch (Exception e) {
-            e.printStackTrace();
+            //nothing more to do
         }
     }
 
@@ -84,20 +88,14 @@ public class CryptographyClient {
             byte[] messageBytes = message.getBytes();
             return Base64.getEncoder().encodeToString(cipher.doFinal(messageBytes));
         } catch (Exception e) {
-            e.printStackTrace();
+            //nothing more to do
             return null;
         }
-    }
-
-    public byte[] getEncryptedChallenge() {
-        return encryptedChallenge;
     }
 
     public String getEncodedEncryptedChallenge() {
         return encodedEncryptedChallenge;
     }
-
-    //TODO AES
 
     public void generateKey(){
         try {
@@ -105,19 +103,9 @@ public class CryptographyClient {
             keyGenerator.init(128);
             secretKey = keyGenerator.generateKey();
         }catch (NoSuchAlgorithmException e){
-            e.printStackTrace();
+            //nothing more to do
         }
     }
-
-    /*public static SecretKey getKeyFromMessage(String msg, String salt)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        KeySpec spec = new PBEKeySpec(msg.toCharArray(), salt.getBytes(), 65536, 256);
-        SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
-                .getEncoded(), "AES");
-        return secret;
-    }*/
 
     public String encrypt(String input, SecretKey key, IvParameterSpec iv) {
 
@@ -128,7 +116,7 @@ public class CryptographyClient {
             return Base64.getEncoder()
                     .encodeToString(cipherText);
         }catch (Exception e){
-            e.printStackTrace();
+            //nothing more to do
         }
         return null;
     }
@@ -143,7 +131,7 @@ public class CryptographyClient {
 
             return new String(plainText);
         }catch (Exception e){
-            e.printStackTrace();
+            //nothing more to do
         }
         return null;
     }
@@ -174,18 +162,6 @@ public class CryptographyClient {
 
     public byte[] getChallenge() {
         return challenge;
-    }
-
-    public String getChallengeString() {
-        return new String(challenge, StandardCharsets.US_ASCII);
-    }
-
-    public String getIv() {
-        return new String(byteIv, StandardCharsets.US_ASCII);
-    }
-
-    public String getSecretKey() {
-        return new String(secretKey.getEncoded(), StandardCharsets.US_ASCII);
     }
 
     public String getChallengeStringEncoded() {

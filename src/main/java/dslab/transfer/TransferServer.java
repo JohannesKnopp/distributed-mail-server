@@ -63,16 +63,16 @@ public class TransferServer implements ITransferServer, Runnable {
     @Override
     @Command
     public void shutdown() {
+        if (dmtpServerThread != null) {
+            dmtpServerThread.shutdown();
+        }
+
         if (dmtpServerSocket != null && !dmtpServerSocket.isClosed()) {
             try {
                 dmtpServerSocket.close();
             } catch (IOException e) {
                 System.err.println("Error while closing DMTP server socket: " + e.getMessage());
             }
-        }
-
-        if (dmtpServerThread != null) {
-            dmtpServerThread.shutdown();
         }
 
         if (in != null) {

@@ -33,7 +33,7 @@ public class CryptographyServer {
     private void loadPrivateKey() {
         byte[] privateKeyBytes;
         try {
-            privateKeyBytes = Files.readAllBytes(Paths.get("keys\\server\\" + componentId + ".der"));
+            privateKeyBytes = Files.readAllBytes(Paths.get("keys/server/" + componentId + ".der"));
             privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKeyBytes));
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             //nothing more to do

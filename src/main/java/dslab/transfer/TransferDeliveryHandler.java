@@ -38,6 +38,8 @@ public class TransferDeliveryHandler extends Thread {
         this.componentId = componentId;
         this.acceptedDomains = acceptedDomains;
         this.config = config;
+        this.executor = Executors.newFixedThreadPool(32);
+        this.queue = new LinkedBlockingQueue<>();
     }
 
     public void run() {
@@ -46,10 +48,6 @@ public class TransferDeliveryHandler extends Thread {
         } catch (RemoteException e) {
             ////nothing more to do
         }
-
-
-        this.queue = new LinkedBlockingQueue<>();
-        this.executor = Executors.newFixedThreadPool(32);
 
         try {
             hostAddress = InetAddress.getLocalHost().getHostAddress();

@@ -52,11 +52,11 @@ public class DmtpServerThread extends Thread {
         this.componentId = componentId;
         this.mailboxStorage = mailboxStorage;
         this.acceptedDomains = acceptedDomains;
+        executor = Executors.newCachedThreadPool();
     }
 
     public void run() {
         this.clients = new ConcurrentLinkedQueue<>();
-        executor = Executors.newCachedThreadPool();
         init();
         while (!quit) {
             try {

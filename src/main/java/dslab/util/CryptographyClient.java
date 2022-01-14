@@ -48,11 +48,11 @@ public class CryptographyClient {
     private void loadPublicKey() {
 
         try {
-            byte[] publicKeyBytes = Files.readAllBytes(Paths.get("keys\\client\\" + componentId + "_pub.der"));
+            byte[] publicKeyBytes = Files.readAllBytes(Paths.get("keys/client/" + componentId + "_pub.der"));
             publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyBytes));
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         } catch (Exception e) {
-
+            //nothing more to do
         }
 
     }

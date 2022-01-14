@@ -83,9 +83,9 @@ public class MessageClient implements IMessageClient, Runnable {
             crypto.generateIv();
 
             String toEncrypt = "ok " + crypto.getChallengeStringEncoded() + " " + crypto.getSecretKeyEncoded() + " " + crypto.getIvEncoded();
-            System.out.println(toEncrypt);
+            //System.out.println(toEncrypt);
             dmapWriter.println(crypto.encryptRSAEncoded(toEncrypt));
-            System.out.println(crypto.encryptRSAEncoded(toEncrypt));
+            //System.out.println(crypto.encryptRSAEncoded(toEncrypt));
             dmapWriter.flush();
 
             String result = crypto.decryptMessage(dmapReader.readLine()).substring(3);
